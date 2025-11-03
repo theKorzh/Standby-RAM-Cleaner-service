@@ -32,7 +32,7 @@ jobs:
           make INSTALL_DIR=C:/StandbyRAMCleaner all
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: StandbyRAMCleaner
           path: build/StandbyRAMCleaner.exe
