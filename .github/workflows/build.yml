@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Setup MSYS2 and install required packages
+      # 2. Setup MSYS2 and install build tools
       - name: Setup MSYS2 and install build tools
         uses: msys2/setup-msys2@v2
         with:
@@ -26,12 +26,12 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-make
 
-      # 3. Build the executable using Makefile (run in bash)
+      # 3. Build the executable using Makefile
       - name: Build executable
         run: |
           cd build
           make clean
-          make INSTALL_DIR=C:/StandbyRAMCleaner all
+          make all
         shell: bash
 
       # 4. Upload the built executable as an artifact
