@@ -1,3 +1,21 @@
+/*
+ * Standby RAM Cleaner Service
+ * ---------------------------
+ * Monitors free memory and purges the Standby List on Windows.
+ *
+ * Copyright (C) 2025 theKorzh
+ *
+ * This file is part of the Standby RAM Cleaner Service project.
+ *
+ * The program is licensed under the GNU General Public License version 3 (GPLv3).
+ * You may use, copy, modify, and distribute this file under the terms of GPLv3:
+ *   - https://www.gnu.org/licenses/gpl-3.0.html
+ *
+ * THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GPLv3
+ * license for more details.
+ */
+
 #include <windows.h>
 #include <winreg.h>
 #include <tchar.h>
