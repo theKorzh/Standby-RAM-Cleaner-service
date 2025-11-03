@@ -13,30 +13,36 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # 1. Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup MSYS2
+      # 2. Setup MSYS2 and install required packages
+      - name: Setup MSYS2 and install build tools
         uses: msys2/setup-msys2@v2
         with:
           update: true
+          install: >
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
+        shell: bash
 
-      - name: Install required packages
-        run: |
-          pacman -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-make
-
+      # 3. Build the executable using Makefile
       - name: Build executable
+        shell: bash
         run: |
           cd build
           make clean
           make INSTALL_DIR=C:/StandbyRAMCleaner all
 
+      # 4. Upload the built executable as an artifact
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: StandbyRAMCleaner
           path: build/StandbyRAMCleaner.exe
 
+      # 5. Create GitHub release asset (only for tags)
       - name: Create GitHub Release Asset
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
