@@ -43,6 +43,17 @@ typedef LONG NTSTATUS;
 //typedef NTSTATUS(WINAPI* NtQuerySystemInformation_t)(SYSTEM_INFORMATION_CLASS, PVOID, ULONG, PULONG);
 //typedef NTSTATUS(WINAPI* NtSetSystemInformation_t)(SYSTEM_INFORMATION_CLASS, PVOID, ULONG);
 
+typedef struct _SYSTEM_MEMORY_LIST_INFORMATION {
+    ULONGLONG ZeroPageCount;
+    ULONGLONG FreePageCount;
+    ULONGLONG ModifiedPageCount;
+    ULONGLONG ModifiedNoWritePageCount;
+    ULONGLONG BadPageCount;
+    ULONGLONG PageCountByPriority[8];
+    ULONGLONG RepurposedPagesByPriority[8];
+    ULONGLONG StandbyRepurposedByPriority[8];
+} SYSTEM_MEMORY_LIST_INFORMATION;
+
 typedef NTSTATUS(WINAPI* NtQuerySystemInformation_t)(
     SYSTEM_INFORMATION_CLASS SystemInformationClass,
     PVOID SystemInformation,
@@ -96,13 +107,16 @@ void EnsureRegistryValues(DWORD* minFreeMB, DWORD* intervalSec) {
     }
 }
 
-void PurgeStandby(NtSetSystemInformation_t NtSetSystemInformation) {
+void PurgeStandby(NtSetSystemInformation_t NtSetSystemInformation, DWORD freeMB) {
     int param = MemoryPurgeStandbyList;
     NTSTATUS status = NtSetSystemInformation(SystemMemoryListInformation, &param, sizeof(param));
+    TCHAR msg[256];
     if (status == 0) {
-        LogEvent(TEXT("Standby cache purged successfully."), EVENTLOG_INFORMATION_TYPE);
+        StringCchPrintf(msg, 256, TEXT("Standby purged. Effective Free: %lu MB"), freeMB);
+        LogEvent(msg, EVENTLOG_INFORMATION_TYPE);
     } else {
-        LogEvent(TEXT("Failed to purge standby cache."), EVENTLOG_ERROR_TYPE);
+        StringCchPrintf(msg, 256, TEXT("Failed to purge standby. Effective Free: %lu MB"), freeMB);
+        LogEvent(msg, EVENTLOG_ERROR_TYPE);
     }
 }
 
@@ -116,36 +130,34 @@ BOOL CheckMemoryPrivileges(NtSetSystemInformation_t NtSetSystemInformation) {
 
 void CheckMemoryLoop(NtQuerySystemInformation_t NtQuerySystemInformation,
                      NtSetSystemInformation_t NtSetSystemInformation) {
-    while (running) {
-        SYSTEM_PERFORMANCE_INFORMATION spi;
+    
+	SYSTEM_INFO si;
+    GetSystemInfo(&si);
+	DWORD pageSize = si.dwPageSize; 
 
-        NTSTATUS status = NtQuerySystemInformation(SystemPerformanceInformation,
-                                                   &spi, sizeof(spi), NULL);
+    while (running) {
+        SYSTEM_MEMORY_LIST_INFORMATION memInfo = {0};
+        NTSTATUS status = NtQuerySystemInformation(SystemMemoryListInformation,
+                                                   &memInfo, sizeof(memInfo), NULL);
         if (status == 0) { // STATUS_SUCCESS
-            DWORD pageSize = 4096; // обычно 4 KB
-            ULONGLONG freeBytes = (ULONGLONG)spi.AvailablePages * pageSize;
-            DWORD freeMB = (DWORD)(freeBytes / (1024 * 1024));
+            ULONGLONG effectiveFreePages = memInfo.FreePageCount + memInfo.ZeroPageCount;
+            DWORD freeMB = (DWORD)((effectiveFreePages * pageSize) / (1024 * 1024));
 
             DWORD minFreeMB, intervalSec;
             EnsureRegistryValues(&minFreeMB, &intervalSec);
 
-            // Если Available < порога, очищаем Standby
+            // Подсчёт Standby (для логирования)
+            ULONGLONG standbyBytes = 0;
+            for (int i = 0; i < 8; i++) standbyBytes += memInfo.PageCountByPriority[i] * pageSize;
+            double xfreeMB = effectiveFreePages * pageSize / (1024.0 * 1024.0);
+            double xstandbyMB = standbyBytes / (1024.0 * 1024.0);
+
+            TCHAR msg[256];
+            StringCchPrintf(msg, 256, TEXT("Free: %.0f MB, Standby: %.0f MB, Threshold: %lu MB"), xfreeMB, xstandbyMB, minFreeMB);
+            LogEvent(msg, EVENTLOG_INFORMATION_TYPE);
+
             if (freeMB < minFreeMB) {
-                int param = 4; // MemoryPurgeStandbyList
-                NTSTATUS purgeStatus = NtSetSystemInformation(0x50 /*SystemMemoryListInformation*/,
-                                                              &param, sizeof(param));
-                TCHAR msg[256];
-                if (purgeStatus == 0) {
-                    StringCchPrintf(msg, 256, TEXT("Standby purged. Free memory: %lu MB"), freeMB);
-                    LogEvent(msg, EVENTLOG_INFORMATION_TYPE);
-                } else {
-                    StringCchPrintf(msg, 256, TEXT("Failed to purge standby. Free memory: %lu MB"), freeMB);
-                    LogEvent(msg, EVENTLOG_ERROR_TYPE);
-                }
-            } else {
-                /*TCHAR msg[256];
-                StringCchPrintf(msg, 256, TEXT("Memory OK. Free: %lu MB, Threshold: %lu MB"), freeMB, minFreeMB);
-                LogEvent(msg, EVENTLOG_INFORMATION_TYPE);*/
+                PurgeStandby(NtSetSystemInformation, freeMB);
             }
 
             Sleep(intervalSec * 1000);

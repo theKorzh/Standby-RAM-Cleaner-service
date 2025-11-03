@@ -1,2 +1,3 @@
 build/version.o
 build/StandbyRAMCleaner.exe
+src/test.c
