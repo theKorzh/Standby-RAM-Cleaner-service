@@ -3,7 +3,17 @@
 **Standby RAM Cleaner Service** is a Windows service that monitors system memory and purges the Standby List when zeroed memory drops below a specified threshold.
 
 ---
+## Background
 
+In some cases (in my case — almost always), Windows does not release Standby Memory even when the amount of free memory reaches zero. This can be quite frustrating, especially when you have 64 GB of RAM, but applications crash due to “out of memory” errors because 40 GB is occupied by Standby Memory. There are plenty of reports about this issue across the internet, but all the more or less official responses from Microsoft boil down to “run sfc /scannow” or “try a clean installation.” Needless to say, that doesn’t fix the problem.
+Unofficial advice usually comes down to “use RAMMap from Sysinternals.” RAMMap is indeed an excellent tool, but having to launch it every few minutes can get tiresome.
+
+I couldn’t find an existing solution to this problem, so I decided to create a small system service that periodically checks the amount of unused memory and, when it runs out, clears the Standby Memory.
+
+### WARNING!
+
+A significant part of the code was written with the help of ChatGPT and may contain errors. I don’t claim to be a good programmer—or a programmer at all. Please keep that in mind.
+---
 ## Features
 
 - Monitors zeroed system memory.
