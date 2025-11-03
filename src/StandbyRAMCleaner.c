@@ -152,9 +152,9 @@ void CheckMemoryLoop(NtQuerySystemInformation_t NtQuerySystemInformation,
             double xfreeMB = effectiveFreePages * pageSize / (1024.0 * 1024.0);
             double xstandbyMB = standbyBytes / (1024.0 * 1024.0);
 
-            TCHAR msg[256];
+            /*TCHAR msg[256];
             StringCchPrintf(msg, 256, TEXT("Free: %.0f MB, Standby: %.0f MB, Threshold: %lu MB"), xfreeMB, xstandbyMB, minFreeMB);
-            LogEvent(msg, EVENTLOG_INFORMATION_TYPE);
+            LogEvent(msg, EVENTLOG_INFORMATION_TYPE);*/
 
             if (freeMB < minFreeMB) {
                 PurgeStandby(NtSetSystemInformation, freeMB);
