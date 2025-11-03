@@ -6,13 +6,21 @@ SRC = ../src/StandbyRAMCleaner.c
 RC = ../src/version.rc
 RESOBJ = version.o
 
-# Default install dir for CI (no spaces)
-DEFAULT_INSTALL_DIR := /c/StandbyRAMCleaner
+# Default install dir (Program Files for x64)
+ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
+	DEFAULT_INSTALL_DIR := C:/Program\ Files/StandbyRAMCleaner
+else
+	DEFAULT_INSTALL_DIR := C:/Program\ Files\ \(x86\)/StandbyRAMCleaner
+endif
 
 INSTALL_DIR ?= $(DEFAULT_INSTALL_DIR)
 
-# Convert Windows-style path to MSYS2-compatible path
-INSTALL_DIR_UNIX := $(shell echo $(INSTALL_DIR) | sed 's#^\([A-Za-z]\):#/\\L\1#; s#\\#/#g')
+# Convert to MSYS2 path for bash, if needed
+ifdef CI
+INSTALL_DIR_UNIX := $(shell echo $(INSTALL_DIR) | sed 's#C:#/c#; s#\\#/#g')
+else
+INSTALL_DIR_UNIX := $(INSTALL_DIR)
+endif
 
 all: $(TARGET) install
 
@@ -38,7 +46,7 @@ install: $(TARGET)
 
 uninstall:
 	@echo [INFO] Uninstalling Standby RAM Cleaner Service ...
-	"$(INSTALL_DIR_UNIX)/$(TARGET)" /uninstall
+	"$(INSTALL_DIR_UNIX)/$(TARGET)" /uninstall || echo "[WARN] Executable not found, skipping uninstall."
 	@if [ -d "$(INSTALL_DIR_UNIX)" ]; then \
 		echo [INFO] Removing directory "$(INSTALL_DIR_UNIX)" ... && \
 		rm -rf "$(INSTALL_DIR_UNIX)"; \
