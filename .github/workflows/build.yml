@@ -31,7 +31,7 @@ jobs:
         run: |
           cd build
           make clean
-          make all
+          make INSTALL_DIR="C:/StandbyRAMCleaner" all
         shell: bash
 
       # 4. Upload the built executable as an artifact
