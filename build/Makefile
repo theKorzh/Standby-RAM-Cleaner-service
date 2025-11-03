@@ -17,7 +17,7 @@ INSTALL_DIR ?= $(DEFAULT_INSTALL_DIR)
 
 # Convert to MSYS2 path for bash, if needed
 ifdef CI
-INSTALL_DIR_UNIX := $(shell echo $(INSTALL_DIR) | sed -e 's#C:#/c#' -e 's#\\#/#g' -e 's# ##g')
+INSTALL_DIR_UNIX := $(shell echo "$(INSTALL_DIR)" | tr '\\' '/' | sed -e 's#C:#/c#')
 else
 INSTALL_DIR_UNIX := $(INSTALL_DIR)
 endif
