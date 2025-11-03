@@ -20,7 +20,7 @@
 ### Requirements
 
 - Windows 7/8/10/11  
-- Compiler: MinGW-w64 or MSVC  
+- Compiler: MinGW-w64  
 - Make (MinGW/MSYS2 includes `make`)  
 
 ### Build with MinGW
@@ -32,20 +32,6 @@
 cd build
 make clean
 make INSTALL_DIR=C:/StandbyRAMCleaner all
-```
-
-### Build with MSVC
-
-1. Open "Developer Command Prompt for Visual Studio".
-2. Navigate to src folder:
-
-```cmd
-cd StandbyRAMCleaner\src
-```
-2. Compile the executable:
-
-```cmd
-cl StandbyRAMCleaner.c version.rc /link Advapi32.lib
 ```
 
 ## Install & Uninstall Service
